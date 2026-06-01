@@ -27,6 +27,24 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Database test endpoint
+app.get('/api/db-test', async (req, res) => {
+  try {
+    const [rows] = await dbPool.query('SELECT 1 AS test;');
+    return res.status(200).json({
+      success: true,
+      message: 'Database connection successful',
+      data: rows
+    });
+  } catch (error) {
+    console.error('Database connection test failed:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Database connection failed'
+    });
+  }
+});
+
 // 2. Mount API Routes (Rule 8 & Prefixed with /api/ as per Rule 4)
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
