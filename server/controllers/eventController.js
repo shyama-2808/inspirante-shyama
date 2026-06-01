@@ -34,7 +34,8 @@ exports.getEvents = async (req, res) => {
         venue: row.venue,
         capacity: capacity,
         registeredCount: registeredCount,
-        fillPercentage: fillPercentage
+        fillPercentage: fillPercentage,
+        isFull: registeredCount >= capacity
       };
     });
 

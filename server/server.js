@@ -251,6 +251,73 @@ app.get('/dev-test', (req, res) => {
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
 
+    /* Event Table Selectors */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.05);
+      font-weight: 700;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .badge-full {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .badge-open {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .table-container {
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      display: none;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .table-container h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
     .console-panel {
       grid-column: span 2;
     }
@@ -374,7 +441,33 @@ app.get('/dev-test', (req, res) => {
         </p>
       </div>
 
-      <!-- Card 3: Create Event Form -->
+      <!-- Card 3: Student Registration Module -->
+      <div class="card">
+        <h2 class="card-title">📝 Student Registration</h2>
+        <div class="form-group">
+          <label for="regEventId">Event ID</label>
+          <input type="number" id="regEventId" placeholder="e.g. 1" style="margin-bottom: 0.75rem;">
+        </div>
+        <button class="btn-primary" onclick="registerForEvent()">✍️ Register For Event</button>
+      </div>
+
+      <!-- Card 4: Registrations Lookup -->
+      <div class="card">
+        <h2 class="card-title">🔍 Registrations Lookup</h2>
+        <div style="margin-bottom: 1.25rem; border-bottom: 1px dashed var(--border); padding-bottom: 0.75rem;">
+          <label>View personal registrations (Student):</label>
+          <button class="btn-secondary" onclick="getMyRegistrations()" style="margin-top: 0.5rem;">📋 Get My Registrations</button>
+        </div>
+        <div>
+          <label for="adminLookupEventId">View student sign-ups for event (Admin):</label>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+            <input type="number" id="adminLookupEventId" placeholder="Event ID" style="flex: 1;">
+            <button class="btn-primary" onclick="getEventRegistrations()">👥 Get Event Registrations</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5: Create Event Form -->
       <div class="card" style="grid-column: span 2;">
         <h2 class="card-title">➕ Create Event (Admin Only)</h2>
         <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem;">
@@ -398,9 +491,32 @@ app.get('/dev-test', (req, res) => {
         <button class="btn-primary" onclick="createNewEvent()">✨ Create New Event</button>
       </div>
 
-      <!-- Card 4: Response Console -->
+      <!-- Card 6: Response Console -->
       <div class="card console-panel">
         <h2 class="card-title">🖥️ Response Terminal</h2>
+        
+        <!-- Interactive Events Table (Populated dynamically) -->
+        <div id="eventsTableContainer" class="table-container">
+          <h3>📅 Active Events</h3>
+          <table id="eventsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Venue</th>
+                <th>Capacity</th>
+                <th>Registered</th>
+                <th>Fill %</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+              <!-- Dynamically built rows -->
+            </tbody>
+          </table>
+        </div>
+
         <div class="terminal">
           <div class="terminal-header">
             <div class="terminal-dot dot-red"></div>
@@ -474,9 +590,46 @@ app.get('/dev-test', (req, res) => {
         });
         const data = await response.json();
         updateConsole(url, 'GET', response.status, data);
+
+        // Display events table if response is ok
+        if (response.ok && data.success && Array.isArray(data.data)) {
+          populateEventsTable(data.data);
+        }
       } catch (err) {
         updateConsole(url, 'GET', 500, { success: false, message: err.message });
       }
+    }
+
+    function populateEventsTable(events) {
+      const tbody = document.getElementById('eventsTableBody');
+      tbody.innerHTML = '';
+      
+      events.forEach(evt => {
+        const tr = document.createElement('tr');
+        
+        const formattedDate = new Date(evt.event_date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+        
+        const fillPercent = Number(evt.fillPercentage).toFixed(1) + '%';
+        const statusBadge = evt.isFull 
+          ? '<span class="badge badge-full">FULL</span>' 
+          : '<span class="badge badge-open">OPEN</span>';
+          
+        tr.innerHTML = "<td>" + evt.id + "</td>" +
+          "<td><strong>" + evt.name + "</strong></td>" +
+          "<td>" + formattedDate + "</td>" +
+          "<td>" + evt.venue + "</td>" +
+          "<td>" + evt.capacity + "</td>" +
+          "<td>" + evt.registeredCount + "</td>" +
+          "<td>" + fillPercent + "</td>" +
+          "<td>" + statusBadge + "</td>";
+        tbody.appendChild(tr);
+      });
+      
+      document.getElementById('eventsTableContainer').style.display = 'block';
     }
 
     async function getCurrentUser() {
@@ -520,7 +673,79 @@ app.get('/dev-test', (req, res) => {
       }
     }
 
+    async function registerForEvent() {
+      const url = '/api/register';
+      const token = localStorage.getItem('token');
+      const eventId = document.getElementById('regEventId').value;
+      
+      console.log("Request:", url);
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': token ? 'Bearer ' + token : '',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ eventId: Number(eventId) })
+        });
+        const data = await response.json();
+        console.log("Response:", data);
+        updateConsole(url, 'POST', response.status, data);
+      } catch (err) {
+        console.log("Response:", err);
+        updateConsole(url, 'POST', 500, { success: false, message: err.message });
+      }
+    }
+
+    async function getMyRegistrations() {
+      const url = '/api/my-registrations';
+      const token = localStorage.getItem('token');
+      
+      console.log("Request:", url);
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': token ? 'Bearer ' + token : ''
+          }
+        });
+        const data = await response.json();
+        console.log("Response:", data);
+        updateConsole(url, 'GET', response.status, data);
+      } catch (err) {
+        console.log("Response:", err);
+        updateConsole(url, 'GET', 500, { success: false, message: err.message });
+      }
+    }
+
+    async function getEventRegistrations() {
+      const eventId = document.getElementById('adminLookupEventId').value;
+      const url = \`/api/events/\${eventId}/registrations\`;
+      const token = localStorage.getItem('token');
+      
+      console.log("Request:", url);
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': token ? 'Bearer ' + token : ''
+          }
+        });
+        const data = await response.json();
+        console.log("Response:", data);
+        updateConsole(url, 'GET', response.status, data);
+      } catch (err) {
+        console.log("Response:", err);
+        updateConsole(url, 'GET', 500, { success: false, message: err.message });
+      }
+    }
+
     function updateConsole(url, method, status, responseJson) {
+      // Hide events table by default unless viewing events
+      if (url !== '/api/events') {
+        document.getElementById('eventsTableContainer').style.display = 'none';
+      }
+
       document.getElementById('respUrl').innerText = url;
       
       const methodEl = document.getElementById('respMethod');
@@ -553,6 +778,7 @@ app.get('/dev-test', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
+app.use('/api', registrationRoutes);
 
 // 3. 404 Route Not Found Middleware (Rule 5: 404 error formatting)
 app.use((req, res, next) => {
