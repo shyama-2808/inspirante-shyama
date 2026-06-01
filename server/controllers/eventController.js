@@ -1,47 +1,47 @@
+const dbPool = require('../config/db');
+
 /**
- * Get List of All Events
+ * Get List of All Events (Sorted by event_date ascending)
  * GET /api/events
  */
 exports.getEvents = async (req, res) => {
   try {
-    // Return structured mock list of events (200 OK)
-    const mockEvents = [
-      {
-        id: 1,
-        title: 'Annual Hackathon 2026',
-        description: '48-hour coding marathon to solve real-world problems.',
-        date: '2026-10-15T09:00:00.000Z',
-        location: 'Campus Tech Hub',
-        capacity: 150,
-        registered_count: 87,
-        created_at: '2026-05-01T12:00:00.000Z'
-      },
-      {
-        id: 2,
-        title: 'Robotics Workshop',
-        description: 'Hands-on training session on embedded programming and IoT.',
-        date: '2026-11-05T10:00:00.000Z',
-        location: 'Lab Room 402',
-        capacity: 50,
-        registered_count: 50, // Fully booked to test capacity limits
-        created_at: '2026-05-10T14:30:00.000Z'
-      },
-      {
-        id: 3,
-        title: 'Career Fair & Networking',
-        description: 'Meet recruiters from top tech companies and startups.',
-        date: '2026-12-01T11:00:00.000Z',
-        location: 'Main Exhibition Hall',
-        capacity: 500,
-        registered_count: 235,
-        created_at: '2026-05-20T08:00:00.000Z'
-      }
-    ];
+    // Single aggregated LEFT JOIN query grouping by events.id
+    const [rows] = await dbPool.query(`
+      SELECT 
+        e.id, 
+        e.name, 
+        e.event_date, 
+        e.venue, 
+        e.capacity, 
+        COUNT(r.id) AS registeredCount
+      FROM events e
+      LEFT JOIN registrations r ON e.id = r.event_id
+      GROUP BY e.id
+      ORDER BY e.event_date ASC
+    `);
+
+    // Map rows to calculate fill percentage and convert values to standard formats
+    const events = rows.map(row => {
+      const registeredCount = Number(row.registeredCount);
+      const capacity = Number(row.capacity);
+      const fillPercentage = capacity > 0 ? (registeredCount / capacity) * 100 : 0;
+
+      return {
+        id: row.id,
+        name: row.name,
+        event_date: row.event_date,
+        venue: row.venue,
+        capacity: capacity,
+        registeredCount: registeredCount,
+        fillPercentage: fillPercentage
+      };
+    });
 
     return res.status(200).json({
       success: true,
       message: 'Events fetched successfully',
-      data: mockEvents
+      data: events
     });
   } catch (error) {
     return res.status(500).json({
@@ -52,48 +52,79 @@ exports.getEvents = async (req, res) => {
 };
 
 /**
- * Create a New Event (Protected Route)
+ * Create a New Event (Admin Only)
  * POST /api/events
  */
 exports.createEvent = async (req, res) => {
   try {
-    const { title, description, date, location, capacity } = req.body;
+    const { name, event_date, venue, capacity } = req.body;
 
-    // Simple role check since req.user is populated by authMiddleware
-    if (req.user && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Forbidden. Admin privileges required to create events.'
-      });
-    }
-
-    // Validate body
-    if (!title || !date || !location || !capacity) {
+    // Validation checks
+    if (!name || !event_date || !venue || capacity === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Title, date, location, and capacity are required.'
+        message: 'Name, event_date, venue, and capacity are required.'
       });
     }
 
-    // Mock successful creation response (201 Created)
+    const capacityNum = Number(capacity);
+    if (isNaN(capacityNum) || capacityNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Capacity must be a positive number greater than 0.'
+      });
+    }
+
+    // Insert new event into MySQL database
+    await dbPool.query(
+      'INSERT INTO events (name, event_date, venue, capacity) VALUES (?, ?, ?, ?)',
+      [name, event_date, venue, capacityNum]
+    );
+
     return res.status(201).json({
       success: true,
-      message: 'Event created successfully',
-      data: {
-        id: Math.floor(Math.random() * 100) + 10,
-        title,
-        description: description || '',
-        date,
-        location,
-        capacity: parseInt(capacity),
-        registered_count: 0,
-        created_at: new Date().toISOString()
-      }
+      message: 'Event created successfully'
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: 'Failed to create event: ' + error.message
+    });
+  }
+};
+
+/**
+ * Get Student Registrations for a Specific Event (Admin Only)
+ * GET /api/events/:id/registrations
+ */
+exports.getEventRegistrations = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if the event exists in the database
+    const [eventRows] = await dbPool.query('SELECT id FROM events WHERE id = ?', [id]);
+    if (eventRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Retrieve registrations
+    const [rows] = await dbPool.query(
+      'SELECT student_username, registered_at FROM registrations WHERE event_id = ?',
+      [id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Registrations retrieved successfully',
+      data: rows
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve registrations: ' + error.message
     });
   }
 };

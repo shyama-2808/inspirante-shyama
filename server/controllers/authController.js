@@ -1,81 +1,184 @@
 const jwt = require('jsonwebtoken');
 
-/**
- * Handle Mock Student/Admin Registration
- * POST /api/auth/register
- */
-exports.register = async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
-
-    // Simple request validation
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Name, email, and password are required.'
-      });
-    }
-
-    // Mock successful creation response (201 Created)
-    return res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: {
-        id: Math.floor(Math.random() * 1000) + 1,
-        name,
-        email,
-        role: role || 'student',
-        created_at: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred during registration: ' + error.message
-    });
-  }
+const adminUser = {
+  username: "admin",
+  password: "inspirante2026",
+  role: "admin",
+  name: "Administrator"
 };
 
+const studentUsers = [
+  {
+    name: "Asha Rao",
+    username: "asha.rao",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Ravi Shetty",
+    username: "ravi.shetty",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Meera Nair",
+    username: "meera.nair",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Kiran Bhat",
+    username: "kiran.bhat",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Divya Kamath",
+    username: "divya.kamath",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Suresh Pai",
+    username: "suresh.pai",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Ananya Hegde",
+    username: "ananya.hegde",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Rohan Shenoy",
+    username: "rohan.shenoy",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Nisha Prabhu",
+    username: "nisha.prabhu",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Tejas Mallya",
+    username: "tejas.mallya",
+    password: "student123",
+    role: "student"
+  },
+  {
+    name: "Priya Bangera",
+    username: "priya.bangera",
+    password: "student123",
+    role: "student"
+  }
+];
+
+const allUsers = [adminUser, ...studentUsers];
+
 /**
- * Handle Mock Login (Generates functional JWT token for routing checks)
+ * Handle Login using hardcoded user accounts.
  * POST /api/auth/login
  */
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Simple validation
-    if (!email || !password) {
-      return res.status(400).json({
+    if (!username || !password) {
+      return res.status(401).json({
         success: false,
-        message: 'Email and password are required.'
+        message: 'Invalid username or password'
       });
     }
 
-    // Sign a mock JWT for standard testing verification
-    const secret = process.env.JWT_SECRET || 'your_secret_key';
-    const mockUserPayload = {
-      id: 42,
-      name: 'John Doe',
-      email: email,
-      role: email.includes('admin') ? 'admin' : 'student'
-    };
+    const user = allUsers.find(u => u.username === username && u.password === password);
 
-    const token = jwt.sign(mockUserPayload, secret, { expiresIn: '24h' });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password'
+      });
+    }
 
-    // Mock successful login response (200 OK)
+    const token = jwt.sign(
+      {
+        username: user.username,
+        role: user.role,
+        name: user.name
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     return res.status(200).json({
       success: true,
       message: 'Login successful',
-      data: {
-        token,
-        user: mockUserPayload
+      token,
+      user: {
+        username: user.username,
+        role: user.role,
+        name: user.name
       }
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: 'An error occurred during login: ' + error.message
+    });
+  }
+};
+
+/**
+ * GET /api/auth/me
+ */
+exports.getMe = async (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      user: req.user
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred: ' + error.message
+    });
+  }
+};
+
+/**
+ * GET /api/auth/admin-test
+ */
+exports.adminTest = async (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      message: 'Admin access granted',
+      user: req.user
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred: ' + error.message
+    });
+  }
+};
+
+/**
+ * GET /api/auth/student-test
+ */
+exports.studentTest = async (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      message: 'Student access granted',
+      user: req.user
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred: ' + error.message
     });
   }
 };
