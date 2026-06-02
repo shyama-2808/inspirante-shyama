@@ -20,15 +20,11 @@ const getStudentName = (username) => {
   return studentNameMap[username] || username;
 };
 
-export default function AdminDashboard({ user, token, onLogout }) {
+export default function AdminDashboard({ user, token, onLogout, addToast }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // Action status states
   const [actionLoading, setActionLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [actionError, setActionError] = useState('');
 
   // Create Event Form States
   const [name, setName] = useState('');
@@ -87,6 +83,7 @@ export default function AdminDashboard({ user, token, onLogout }) {
       setEvents(finalEvents);
     } catch (err) {
       setError(err.message || 'Failed to load events data.');
+      addToast(err.message || 'Failed to load events data.', 'error');
     } finally {
       if (showMainLoading) {
         setLoading(false);
@@ -101,8 +98,6 @@ export default function AdminDashboard({ user, token, onLogout }) {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     setActionLoading(true);
-    setSuccessMessage('');
-    setActionError('');
 
     try {
       const data = await api.createEvent(token, {
@@ -111,7 +106,7 @@ export default function AdminDashboard({ user, token, onLogout }) {
         venue,
         capacity: Number(capacity)
       });
-      setSuccessMessage(data.message || 'Event created successfully!');
+      addToast(data.message || 'Event created successfully!', 'success');
 
       // Reset form
       setName('');
@@ -121,7 +116,7 @@ export default function AdminDashboard({ user, token, onLogout }) {
 
       await loadData(false);
     } catch (err) {
-      setActionError(err.message || 'Failed to create event.');
+      addToast(err.message || 'Failed to create event.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -129,14 +124,13 @@ export default function AdminDashboard({ user, token, onLogout }) {
 
   const handleViewRegistrations = async (eventId, eventName) => {
     setActionLoading(true);
-    setActionError('');
     try {
       const res = await api.getEventRegistrations(token, eventId);
       setActiveRegs(res.data || []);
       setActiveEventName(eventName);
       setRegsModalOpen(true);
     } catch (err) {
-      setActionError(err.message || 'Failed to fetch event registrations.');
+      addToast(err.message || 'Failed to fetch event registrations.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -163,8 +157,6 @@ export default function AdminDashboard({ user, token, onLogout }) {
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    setActionError('');
-    setSuccessMessage('');
 
     const edits = JSON.parse(localStorage.getItem('admin_event_edits') || '{}');
     edits[editEventId] = {
@@ -175,7 +167,7 @@ export default function AdminDashboard({ user, token, onLogout }) {
     };
     localStorage.setItem('admin_event_edits', JSON.stringify(edits));
 
-    setSuccessMessage('Event updated successfully (local override)');
+    addToast('Event updated successfully (local override)', 'success');
     setEditModalOpen(false);
     loadData(false);
   };
@@ -187,16 +179,13 @@ export default function AdminDashboard({ user, token, onLogout }) {
   };
 
   const handleDeleteConfirm = () => {
-    setActionError('');
-    setSuccessMessage('');
-
     const deletions = JSON.parse(localStorage.getItem('admin_event_deletions') || '[]');
     if (!deletions.includes(deleteEventId)) {
       deletions.push(deleteEventId);
     }
     localStorage.setItem('admin_event_deletions', JSON.stringify(deletions));
 
-    setSuccessMessage('Event deleted successfully (local override)');
+    addToast('Event deleted successfully (local override)', 'success');
     setDeleteModalOpen(false);
     loadData(false);
   };
@@ -222,10 +211,6 @@ export default function AdminDashboard({ user, token, onLogout }) {
         </div>
         <button className="btn-danger" onClick={onLogout}>Logout</button>
       </header>
-
-      {/* Action Alerts */}
-      {successMessage && <div className="banner banner-success">{successMessage}</div>}
-      {actionError && <div className="banner banner-error">{actionError}</div>}
 
       {loading ? (
         <div className="loading-container">
@@ -264,79 +249,92 @@ export default function AdminDashboard({ user, token, onLogout }) {
           <div className="events-grid-section" style={{ marginTop: '0.5rem' }}>
             <h2 className="section-title">📊 Live Capacity Monitor</h2>
             {events.length === 0 ? (
-              <div className="card empty-state" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                No events currently configured.
+              <div className="card empty-state">
+                <div className="empty-state-icon">📊</div>
+                <p className="empty-state-title">No events configured</p>
+                <p className="empty-state-desc">Create your first event using the form below to get started.</p>
               </div>
             ) : (
-              <div className="events-grid">
-                {events.map((evt) => {
-                  const fillPercent = evt.fillPercentage;
-                  let progressBarColorClass = 'progress-green';
-                  if (fillPercent >= 50 && fillPercent < 80) {
-                    progressBarColorClass = 'progress-amber';
-                  } else if (fillPercent >= 80) {
-                    progressBarColorClass = 'progress-red';
-                  }
+              <>
+                <div className="events-grid">
+                  {events.map((evt) => {
+                    const fillPercent = evt.fillPercentage;
+                    let progressBarColorClass = 'progress-green';
+                    if (fillPercent >= 50 && fillPercent < 80) {
+                      progressBarColorClass = 'progress-amber';
+                    } else if (fillPercent >= 80) {
+                      progressBarColorClass = 'progress-red';
+                    }
 
-                  return (
-                    <div className="card event-card" key={evt.id}>
-                      <div className="event-card-top">
-                        <h3 className="event-name">{evt.name}</h3>
-                        <div className="event-details" style={{ marginTop: '0.5rem' }}>
-                          <div className="event-detail-item">
-                            <span>📅</span>
-                            <span>{formatDate(evt.event_date)}</span>
+                    return (
+                      <div className="card event-card" key={evt.id}>
+                        <div className="event-card-top">
+                          <h3 className="event-name">{evt.name}</h3>
+                          <div className="event-details" style={{ marginTop: '0.5rem' }}>
+                            <div className="event-detail-item">
+                              <span>📅</span>
+                              <span>{formatDate(evt.event_date)}</span>
+                            </div>
+                            <div className="event-detail-item">
+                              <span>📍</span>
+                              <span>{evt.venue}</span>
+                            </div>
                           </div>
-                          <div className="event-detail-item">
-                            <span>📍</span>
-                            <span>{evt.venue}</span>
+                        </div>
+
+                        <div className="event-card-middle">
+                          <div className="event-capacity-info">
+                            <span>Capacity: {evt.capacity}</span>
+                            <span>{evt.registeredCount} Registered ({fillPercent.toFixed(0)}%)</span>
+                          </div>
+                          <div className="fill-bar-bg">
+                            <div
+                              className={`fill-bar-fill ${progressBarColorClass}`}
+                              style={{ width: `${Math.min(fillPercent, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        <div className="card-footer">
+                          <div className="btn-group-admin">
+                            <button
+                              type="button"
+                              className="btn-primary btn-admin-action"
+                              onClick={() => handleViewRegistrations(evt.id, evt.name)}
+                              disabled={actionLoading}
+                            >
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary btn-admin-action"
+                              onClick={() => openEditModal(evt)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-delete btn-admin-action"
+                              onClick={() => openDeleteModal(evt)}
+                            >
+                              Delete
+                            </button>
                           </div>
                         </div>
                       </div>
-
-                      <div className="event-card-middle">
-                        <div className="event-capacity-info">
-                          <span>Capacity: {evt.capacity}</span>
-                          <span>{evt.registeredCount} Registered ({fillPercent.toFixed(0)}%)</span>
-                        </div>
-                        <div className="fill-bar-bg">
-                          <div
-                            className={`fill-bar-fill ${progressBarColorClass}`}
-                            style={{ width: `${Math.min(fillPercent, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      <div className="card-footer">
-                        <div className="btn-group-admin">
-                          <button
-                            type="button"
-                            className="btn-primary btn-admin-action"
-                            onClick={() => handleViewRegistrations(evt.id, evt.name)}
-                            disabled={actionLoading}
-                          >
-                            View
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-secondary btn-admin-action"
-                            onClick={() => openEditModal(evt)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-delete btn-admin-action"
-                            onClick={() => openDeleteModal(evt)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+                
+                {events.length > 0 && (
+                  <div className="capacity-legend">
+                    <span className="legend-title">Capacity:</span>
+                    <span className="legend-item">🟢 Below 50%</span>
+                    <span className="legend-item">🟠 50% &ndash; 79%</span>
+                    <span className="legend-item">🔴 80% and above</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -408,9 +406,11 @@ export default function AdminDashboard({ user, token, onLogout }) {
             </header>
             <div className="modal-body">
               {activeRegs.length === 0 ? (
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', padding: '2rem' }}>
-                  No students registered for this event yet.
-                </p>
+                <div className="empty-state" style={{ padding: '2rem 1rem' }}>
+                  <div className="empty-state-icon" style={{ fontSize: '1.8rem' }}>👥</div>
+                  <p className="empty-state-title" style={{ fontSize: '1rem' }}>No registrations found</p>
+                  <p className="empty-state-desc" style={{ fontSize: '0.8rem' }}>Students who register will appear here.</p>
+                </div>
               ) : (
                 <div className="regs-list">
                   {activeRegs.map((reg, idx) => (
@@ -512,7 +512,7 @@ export default function AdminDashboard({ user, token, onLogout }) {
             </header>
             <div className="modal-body">
               <p style={{ lineHeight: '1.5' }}>
-                Are you sure you want to delete the event <strong>{deleteEventName}</strong>? This action will remove it from the dashboard.
+                Are you sure you want to delete the event <strong>{deleteEventName}</strong>? <br /><span style={{ color: 'var(--error)', fontWeight: 'var(--font-semibold)' }}>This action cannot be undone.</span>
               </p>
             </div>
             <footer className="modal-footer">

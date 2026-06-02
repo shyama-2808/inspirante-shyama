@@ -1,25 +1,23 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 
-export default function Login({ onLoginSuccess }) {
+export default function Login({ onLoginSuccess, addToast }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) {
-      setError('Username and password are required');
+      addToast('Username and password are required', 'warning');
       return;
     }
     setLoading(true);
-    setError('');
     try {
       const data = await api.login(username, password);
       onLoginSuccess(data.token);
     } catch (err) {
-      setError(err.message || 'Invalid username or password');
+      addToast(err.message || 'Invalid username or password', 'error');
     } finally {
       setLoading(false);
     }
@@ -48,8 +46,6 @@ export default function Login({ onLoginSuccess }) {
             <h1 className="login-title">College Event Portal</h1>
             <p className="login-subtitle">Event Registration System</p>
           </div>
-          
-          {error && <div className="error-banner">{error}</div>}
 
           {/* Username Input Field */}
           <div className="form-group">

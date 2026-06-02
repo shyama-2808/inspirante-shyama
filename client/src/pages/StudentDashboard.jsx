@@ -2,16 +2,12 @@ import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { formatDate, formatRegDate } from '../utils/date';
 
-export default function StudentDashboard({ user, token, onLogout }) {
+export default function StudentDashboard({ user, token, onLogout, addToast }) {
   const [events, setEvents] = useState([]);
   const [myRegistrations, setMyRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // Action status messages
   const [actionLoading, setActionLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [actionError, setActionError] = useState('');
 
   const loadData = async (showMainLoading = true) => {
     if (showMainLoading) {
@@ -27,6 +23,7 @@ export default function StudentDashboard({ user, token, onLogout }) {
       setMyRegistrations(regsData.data || []);
     } catch (err) {
       setError(err.message || 'Failed to load dashboard data.');
+      addToast(err.message || 'Failed to load dashboard data.', 'error');
     } finally {
       if (showMainLoading) {
         setLoading(false);
@@ -40,15 +37,13 @@ export default function StudentDashboard({ user, token, onLogout }) {
 
   const handleRegister = async (eventId) => {
     setActionLoading(true);
-    setSuccessMessage('');
-    setActionError('');
     try {
       const data = await api.registerToEvent(token, eventId);
-      setSuccessMessage(data.message || 'Registration successful!');
+      addToast(data.message || 'Registration successful!', 'success');
       // Re-fetch data in background to refresh counts and button states
       await loadData(false);
     } catch (err) {
-      setActionError(err.message || 'Failed to register for event.');
+      addToast(err.message || 'Failed to register for event.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -64,10 +59,6 @@ export default function StudentDashboard({ user, token, onLogout }) {
         <button className="btn-danger" onClick={onLogout}>Logout</button>
       </header>
 
-      {/* Action alerts */}
-      {successMessage && <div className="banner banner-success">{successMessage}</div>}
-      {actionError && <div className="banner banner-error">{actionError}</div>}
-
       {loading ? (
         <div className="loading-container">
           <div className="spinner"></div>
@@ -81,8 +72,10 @@ export default function StudentDashboard({ user, token, onLogout }) {
           <div className="events-grid-section">
             <h2 className="section-title">📅 Upcoming Events</h2>
             {events.length === 0 ? (
-              <div className="card empty-state" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                No upcoming events listed.
+              <div className="card empty-state">
+                <div className="empty-state-icon">📅</div>
+                <p className="empty-state-title">No events available</p>
+                <p className="empty-state-desc">There are no upcoming events listed at the moment.</p>
               </div>
             ) : (
               <div className="events-grid">
@@ -152,7 +145,14 @@ export default function StudentDashboard({ user, token, onLogout }) {
               </div>
             )}
 
-
+            {events.length > 0 && (
+              <div className="capacity-legend">
+                <span className="legend-title">Capacity:</span>
+                <span className="legend-item">🟢 Below 50%</span>
+                <span className="legend-item">🟠 50% &ndash; 79%</span>
+                <span className="legend-item">🔴 80% and above</span>
+              </div>
+            )}
           </div>
 
           {/* My Registrations Card */}
