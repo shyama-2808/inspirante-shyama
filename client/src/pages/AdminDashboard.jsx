@@ -325,15 +325,8 @@ export default function AdminDashboard({ user, token, onLogout, addToast }) {
                     );
                   })}
                 </div>
-                
-                {events.length > 0 && (
-                  <div className="capacity-legend">
-                    <span className="legend-title">Capacity:</span>
-                    <span className="legend-item">🟢 Below 50%</span>
-                    <span className="legend-item">🟠 50% &ndash; 79%</span>
-                    <span className="legend-item">🔴 80% and above</span>
-                  </div>
-                )}
+
+
               </>
             )}
           </div>
