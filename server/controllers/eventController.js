@@ -129,3 +129,140 @@ exports.getEventRegistrations = async (req, res) => {
     });
   }
 };
+
+/**
+ * Update Event Details (Admin Only)
+ * PUT /api/events/:id
+ */
+exports.updateEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, event_date, venue, capacity } = req.body;
+
+    // Check if event exists
+    const [eventRows] = await dbPool.query('SELECT id FROM events WHERE id = ?', [id]);
+    if (eventRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Validation checks
+    if (!name || name.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Event name is required.'
+      });
+    }
+    if (!event_date || isNaN(Date.parse(event_date))) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid event date is required.'
+      });
+    }
+    if (!venue || venue.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Venue is required.'
+      });
+    }
+    if (capacity === undefined || capacity === null || capacity === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Capacity is required.'
+      });
+    }
+
+    const capacityNum = Number(capacity);
+    if (isNaN(capacityNum) || capacityNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Capacity must be a positive number greater than 0.'
+      });
+    }
+
+    // Update event in database
+    await dbPool.query(
+      'UPDATE events SET name = ?, event_date = ?, venue = ?, capacity = ? WHERE id = ?',
+      [name.trim(), event_date, venue.trim(), capacityNum, id]
+    );
+
+    // Fetch the updated event to return it
+    const [updatedRows] = await dbPool.query(`
+      SELECT 
+        e.id, 
+        e.name, 
+        e.event_date, 
+        e.venue, 
+        e.capacity, 
+        COUNT(r.id) AS registeredCount
+      FROM events e
+      LEFT JOIN registrations r ON e.id = r.event_id
+      WHERE e.id = ?
+      GROUP BY e.id
+    `, [id]);
+
+    const row = updatedRows[0];
+    const registeredCount = Number(row.registeredCount);
+    const cap = Number(row.capacity);
+    const fillPercentage = cap > 0 ? (registeredCount / cap) * 100 : 0;
+
+    const updatedEvent = {
+      id: row.id,
+      name: row.name,
+      event_date: row.event_date,
+      venue: row.venue,
+      capacity: cap,
+      registeredCount: registeredCount,
+      fillPercentage: fillPercentage,
+      isFull: registeredCount >= cap
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'Event updated successfully',
+      data: updatedEvent
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update event: ' + error.message
+    });
+  }
+};
+
+/**
+ * Delete Event (Admin Only)
+ * DELETE /api/events/:id
+ */
+exports.deleteEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if event exists
+    const [eventRows] = await dbPool.query('SELECT id FROM events WHERE id = ?', [id]);
+    if (eventRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Delete dependent registrations first to satisfy foreign key constraint
+    await dbPool.query('DELETE FROM registrations WHERE event_id = ?', [id]);
+
+    // Delete the event
+    await dbPool.query('DELETE FROM events WHERE id = ?', [id]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Event deleted successfully'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete event: ' + error.message
+    });
+  }
+};

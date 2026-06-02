@@ -52,35 +52,7 @@ export default function AdminDashboard({ user, token, onLogout, addToast }) {
     setError('');
     try {
       const res = await api.getEvents(token);
-      const backendEvents = res.data || [];
-
-      // Fetch edits and deletions overrides from localStorage
-      const edits = JSON.parse(localStorage.getItem('admin_event_edits') || '{}');
-      const deletions = JSON.parse(localStorage.getItem('admin_event_deletions') || '[]');
-
-      // Merge overrides
-      const finalEvents = backendEvents
-        .filter(evt => !deletions.includes(evt.id))
-        .map(evt => {
-          if (edits[evt.id]) {
-            const edited = edits[evt.id];
-            const cap = Number(edited.capacity);
-            const regCount = Number(evt.registeredCount);
-            const fillPercentage = cap > 0 ? (regCount / cap) * 100 : 0;
-            return {
-              ...evt,
-              name: edited.name,
-              event_date: edited.event_date,
-              venue: edited.venue,
-              capacity: cap,
-              fillPercentage: fillPercentage,
-              isFull: regCount >= cap
-            };
-          }
-          return evt;
-        });
-
-      setEvents(finalEvents);
+      setEvents(res.data || []);
     } catch (err) {
       setError(err.message || 'Failed to load events data.');
       addToast(err.message || 'Failed to load events data.', 'error');
@@ -155,21 +127,24 @@ export default function AdminDashboard({ user, token, onLogout, addToast }) {
     setEditModalOpen(true);
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-
-    const edits = JSON.parse(localStorage.getItem('admin_event_edits') || '{}');
-    edits[editEventId] = {
-      name: editForm.name,
-      event_date: editForm.event_date,
-      venue: editForm.venue,
-      capacity: Number(editForm.capacity)
-    };
-    localStorage.setItem('admin_event_edits', JSON.stringify(edits));
-
-    addToast('Event updated successfully (local override)', 'success');
-    setEditModalOpen(false);
-    loadData(false);
+    setActionLoading(true);
+    try {
+      await api.updateEvent(token, editEventId, {
+        name: editForm.name,
+        event_date: editForm.event_date,
+        venue: editForm.venue,
+        capacity: Number(editForm.capacity)
+      });
+      addToast('Event updated successfully', 'success');
+      setEditModalOpen(false);
+      await loadData(false);
+    } catch (err) {
+      addToast(err.message || 'Failed to update event.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const openDeleteModal = (evt) => {
@@ -178,16 +153,18 @@ export default function AdminDashboard({ user, token, onLogout, addToast }) {
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    const deletions = JSON.parse(localStorage.getItem('admin_event_deletions') || '[]');
-    if (!deletions.includes(deleteEventId)) {
-      deletions.push(deleteEventId);
+  const handleDeleteConfirm = async () => {
+    setActionLoading(true);
+    try {
+      await api.deleteEvent(token, deleteEventId);
+      addToast('Event deleted successfully', 'success');
+      setDeleteModalOpen(false);
+      await loadData(false);
+    } catch (err) {
+      addToast(err.message || 'Failed to delete event.', 'error');
+    } finally {
+      setActionLoading(false);
     }
-    localStorage.setItem('admin_event_deletions', JSON.stringify(deletions));
-
-    addToast('Event deleted successfully (local override)', 'success');
-    setDeleteModalOpen(false);
-    loadData(false);
   };
 
 
@@ -483,11 +460,11 @@ export default function AdminDashboard({ user, token, onLogout, addToast }) {
                 </div>
               </div>
               <footer className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setEditModalOpen(false)} style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setEditModalOpen(false)} style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }} disabled={actionLoading}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }}>
-                  Save Changes
+                <button type="submit" className="btn-primary" style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }} disabled={actionLoading}>
+                  {actionLoading ? 'Saving...' : 'Save Changes'}
                 </button>
               </footer>
             </form>
@@ -509,11 +486,11 @@ export default function AdminDashboard({ user, token, onLogout, addToast }) {
               </p>
             </div>
             <footer className="modal-footer">
-              <button className="btn-secondary" onClick={() => setDeleteModalOpen(false)} style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }}>
+              <button className="btn-secondary" onClick={() => setDeleteModalOpen(false)} style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }} disabled={actionLoading}>
                 Cancel
               </button>
-              <button type="button" className="btn-danger" onClick={handleDeleteConfirm} style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }}>
-                Delete
+              <button type="button" className="btn-danger" onClick={handleDeleteConfirm} style={{ padding: '0.6rem 1.5rem', borderRadius: '8px' }} disabled={actionLoading}>
+                {actionLoading ? 'Deleting...' : 'Delete'}
               </button>
             </footer>
           </div>

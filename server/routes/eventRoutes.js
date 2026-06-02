@@ -12,4 +12,10 @@ router.post('/', verifyToken, requireAdmin, eventController.createEvent);
 // 3. GET /api/events/:id/registrations (Admin only)
 router.get('/:id/registrations', verifyToken, requireAdmin, eventController.getEventRegistrations);
 
+// 4. PUT /api/events/:id (Admin only)
+router.put('/:id', verifyToken, requireAdmin, eventController.updateEvent);
+
+// 5. DELETE /api/events/:id (Admin only)
+router.delete('/:id', verifyToken, requireAdmin, eventController.deleteEvent);
+
 module.exports = router;

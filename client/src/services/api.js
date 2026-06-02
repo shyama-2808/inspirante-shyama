@@ -38,5 +38,11 @@ export const api = {
     request('/events', 'POST', eventData, token),
 
   getEventRegistrations: (token, eventId) => 
-    request(`/events/${eventId}/registrations`, 'GET', null, token)
+    request(`/events/${eventId}/registrations`, 'GET', null, token),
+
+  updateEvent: (token, eventId, eventData) => 
+    request(`/events/${eventId}`, 'PUT', eventData, token),
+
+  deleteEvent: (token, eventId) => 
+    request(`/events/${eventId}`, 'DELETE', null, token)
 };
