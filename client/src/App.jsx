@@ -66,10 +66,10 @@ function App() {
       <main className="app-main">
         {renderContent()}
       </main>
-      
+
       <footer className="app-footer">
         <p className="footer-title">College Event Registration Portal</p>
-        <p className="footer-sub">Built with React, Express.js and MySQL &bull; &copy; 2026</p>
+        <p className="footer-sub">Built with React, Express.js and MySQL &bull; by Shyam &copy; All rights reserved 2026</p>
       </footer>
 
       <ToastContainer toasts={toasts} onCloseToast={removeToast} />
