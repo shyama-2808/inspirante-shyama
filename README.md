@@ -162,14 +162,17 @@ JWT_SECRET=your_jwt_secret_key_here
 
 ## Screenshots Section
 
-### Login Page Screenshot Placeholder
-*Centrally aligned dark glassmorphism card with branded SVG event clipboard logo, lock/user icon inputs, active focus glows, and sliding toast alerts.*
+## Login Page
 
-### Student Dashboard Screenshot Placeholder
-*Overview of upcoming events in a responsive grid featuring colored progress bars (green, amber, red), dynamic badges ("Registered", "FULL"), student registrations table, and the capacity legend.*
+![Login Page](screenshots/login.png)
 
-### Admin Dashboard Screenshot Placeholder
-*Administrative control center featuring total metrics stats cards, Live Capacity Monitor grid with action controls (View Roster, Edit, Delete), and the Create Event form.*
+## Student Dashboard
+
+![Student Dashboard](screenshots/student.png)
+
+## Admin Dashboard
+
+![Admin Dashboard](screenshots/admin.png)
 
 ---
 

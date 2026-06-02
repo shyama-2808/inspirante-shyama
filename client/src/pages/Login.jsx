@@ -31,7 +31,7 @@ export default function Login({ onLoginSuccess, addToast }) {
 
       <div className="login-card-wrapper">
         <form className="login-form card" onSubmit={handleSubmit}>
-          
+
           {/* Logo / Branding header */}
           <div className="login-brand">
             <div className="login-logo-container">
@@ -61,7 +61,7 @@ export default function Login({ onLoginSuccess, addToast }) {
                 type="text"
                 id="username"
                 className="input-with-icon"
-                placeholder="e.g. asha.rao"
+                placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={loading}
