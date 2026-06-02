@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { formatDate, formatRegDate } from '../utils/date';
 
 const studentNameMap = {
   "asha.rao": "Asha Rao",
@@ -111,13 +112,13 @@ export default function AdminDashboard({ user, token, onLogout }) {
         capacity: Number(capacity)
       });
       setSuccessMessage(data.message || 'Event created successfully!');
-      
+
       // Reset form
       setName('');
       setEventDate('');
       setVenue('');
       setCapacity('');
-      
+
       await loadData(false);
     } catch (err) {
       setActionError(err.message || 'Failed to create event.');
@@ -200,25 +201,7 @@ export default function AdminDashboard({ user, token, onLogout }) {
     loadData(false);
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
 
-  const formatRegDate = (dateStr) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   // Stats computations
   const totalEvents = events.length;
@@ -332,7 +315,7 @@ export default function AdminDashboard({ user, token, onLogout }) {
                             onClick={() => handleViewRegistrations(evt.id, evt.name)}
                             disabled={actionLoading}
                           >
-                            View Regs
+                            View
                           </button>
                           <button
                             type="button"

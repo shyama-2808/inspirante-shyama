@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { formatDate, formatRegDate } from '../utils/date';
 
 export default function StudentDashboard({ user, token, onLogout }) {
   const [events, setEvents] = useState([]);
   const [myRegistrations, setMyRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Action status messages
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -53,24 +54,6 @@ export default function StudentDashboard({ user, token, onLogout }) {
     }
   };
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatRegDate = (dateStr) => {
-    return new Date(dateStr).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
     <div className="dashboard-container">
       <header className="dashboard-header card">
@@ -106,7 +89,7 @@ export default function StudentDashboard({ user, token, onLogout }) {
                 {events.map((evt) => {
                   const isRegistered = myRegistrations.some(reg => reg.eventId === evt.id);
                   const fillPercent = evt.fillPercentage;
-                  
+
                   // Color rule logic for capacity progress bar
                   let progressBarColorClass = 'progress-green';
                   if (fillPercent >= 50 && fillPercent < 80) {
@@ -137,8 +120,8 @@ export default function StudentDashboard({ user, token, onLogout }) {
                           <span>{evt.registeredCount} Registered ({fillPercent.toFixed(0)}%)</span>
                         </div>
                         <div className="fill-bar-bg">
-                          <div 
-                            className={`fill-bar-fill ${progressBarColorClass}`} 
+                          <div
+                            className={`fill-bar-fill ${progressBarColorClass}`}
                             style={{ width: `${Math.min(fillPercent, 100)}%` }}
                           ></div>
                         </div>
@@ -154,8 +137,8 @@ export default function StudentDashboard({ user, token, onLogout }) {
                             FULL
                           </button>
                         ) : (
-                          <button 
-                            className="btn-primary btn-card-action" 
+                          <button
+                            className="btn-primary btn-card-action"
                             onClick={() => handleRegister(evt.id)}
                             disabled={actionLoading}
                           >
@@ -169,14 +152,7 @@ export default function StudentDashboard({ user, token, onLogout }) {
               </div>
             )}
 
-            {events.length > 0 && (
-              <div className="capacity-legend">
-                <span className="legend-title">Capacity Indicator:</span>
-                <span className="legend-item"><span className="legend-dot dot-green"></span> Below 50%</span>
-                <span className="legend-item"><span className="legend-dot dot-amber"></span> 50% - 79%</span>
-                <span className="legend-item"><span className="legend-dot dot-red"></span> 80% and above</span>
-              </div>
-            )}
+
           </div>
 
           {/* My Registrations Card */}

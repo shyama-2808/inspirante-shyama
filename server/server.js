@@ -777,7 +777,6 @@ app.get('/dev-test', (req, res) => {
 // 2. Mount API Routes (Rule 8 & Prefixed with /api/ as per Rule 4)
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/registrations', registrationRoutes);
 app.use('/api', registrationRoutes);
 
 // 3. 404 Route Not Found Middleware (Rule 5: 404 error formatting)
