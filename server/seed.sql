@@ -9,7 +9,6 @@ USE `event_portal`;
 -- ==========================================
 DROP TABLE IF EXISTS `registrations`;
 DROP TABLE IF EXISTS `events`;
-DROP TABLE IF EXISTS `users`;
 
 -- ==========================================
 -- 1. Table: events

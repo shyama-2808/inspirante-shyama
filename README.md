@@ -122,7 +122,7 @@ mysql -u root -p < server/seed.sql
 ### Option 2: Using MySQL Workbench
 1. Open MySQL Workbench and connect to your local database instance.
 2. Go to **File -> Open SQL Script...** and choose the `server/seed.sql` file.
-3. Click the yellow lightning bolt icon to run the query script.
+3. Run the query script.
 4. Refresh your schema list; the `event_portal` database containing `events` and `registrations` tables will be created and populated.
 
 ---
@@ -185,10 +185,17 @@ The portal is designed for an assignment evaluation using a preset configuration
 - **Password**: `inspirante2026`
 
 ### Predefined Students
-- **Username**: `asha.rao` | **Password**: `student123`
-- **Username**: `ravi.shetty` | **Password**: `student123`
-- **Username**: `meera.nair` | **Password**: `student123`
-- **Username**: `kiran.bhat` | **Password**: `student123`
+- **Username**: `asha.rao`      | **Password**: `student123`
+- **Username**: `ravi.shetty`   | **Password**: `student123`
+- **Username**: `meera.nair`    | **Password**: `student123`
+- **Username**: `kiran.bhat`    | **Password**: `student123`
+- **Username**: `divya.kamath`  | **Password**: `student123`
+- **Username**: `suresh.pai`    | **Password**: `student123`
+- **Username**: `ananya.hegde`  | **Password**: `student123`
+- **Username**: `rohan.shenoy`  | **Password**: `student123`
+- **Username**: `nisha.prabhu`  | **Password**: `student123`
+- **Username**: `tejas.mallya`  | **Password**: `student123`
+- **Username**: `priya.bangera` | **Password**: `student123`
 
 ---
 
@@ -256,6 +263,13 @@ The portal is designed for an assignment evaluation using a preset configuration
 
 ---
 
+## Known Issues
+
+No major known issues at this time.
+Future enhancements are listed in the "Future Improvements" section.
+
+---
+
 ## Future Improvements
 
 - **Email Notifications**: Automatically dispatch registration confirmations and event reminders to students.
@@ -267,4 +281,4 @@ The portal is designed for an assignment evaluation using a preset configuration
 
 ## Conclusion
 
-The **College Event Registration Portal** is a clean, scalable application demonstrating modern RESTful database operations and visually stunning styling. Designed with user accessibility and clean code practices in mind, it is ready for deployment and recruiter review.
+The **College Event Registration Portal** is a clean full-stack web application that helps students discover and register for events while allowing administrators to create, manage, and monitor events efficiently. The project focuses on clean architecture, responsive design, and a smooth user experience.
